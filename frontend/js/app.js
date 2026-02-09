@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = 'http://localhost:8001/api/v1';
+// Change this to your Railway backend URL after deployment
+const API_BASE_URL = window.PAYGATE_API_URL || 'http://localhost:8001/api/v1';
 
 // Auth State
 let currentUser = null;

@@ -1,3 +1,2 @@
-// Production API URL - Update this after deploying backend to Railway
-// Example: window.PAYGATE_API_URL = 'https://your-app.railway.app/api/v1';
-window.PAYGATE_API_URL = null; // null = use localhost for development
+// Production API URL
+window.PAYGATE_API_URL = 'https://web-production-ed8f.up.railway.app/api/v1';

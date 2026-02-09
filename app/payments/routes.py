@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from app.database import get_db
-from app.models import User, Transaction, TransactionStatus
+from app.models import User, Transaction, TransactionStatus, IdempotencyKey
 from app.schemas import (
     PaymentInitialize, PaymentInitializeResponse, PaymentVerifyResponse,
     PaymentHistoryResponse, TransactionResponse, WebhookPayload
@@ -17,14 +17,35 @@ from app.payments.paystack import (
 
 router = APIRouter(prefix="/api/v1/payments", tags=["Payments"])
 
+# Idempotency key expiry (24 hours)
+IDEMPOTENCY_KEY_EXPIRY_HOURS = 24
+
 
 @router.post("/initialize", response_model=PaymentInitializeResponse)
 async def initialize_payment(
     payment: PaymentInitialize,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key")
 ):
-    """Initialize a new payment transaction."""
+    """Initialize a new payment transaction.
+
+    Use X-Idempotency-Key header to prevent duplicate payments.
+    If the same key is used within 24 hours, the original response is returned.
+    """
+
+    # Check for existing idempotency key
+    if idempotency_key:
+        existing = db.query(IdempotencyKey).filter(
+            IdempotencyKey.key == idempotency_key,
+            IdempotencyKey.user_id == current_user.id,
+            IdempotencyKey.expires_at > datetime.now(timezone.utc)
+        ).first()
+
+        if existing:
+            # Return cached response
+            return PaymentInitializeResponse(**existing.response)
+
     reference = generate_reference()
 
     try:
@@ -53,16 +74,30 @@ async def initialize_payment(
             paystack_response=paystack_response
         )
         db.add(transaction)
+
+        # Build response
+        response_data = {
+            "status": "success",
+            "reference": reference,
+            "authorization_url": data["authorization_url"],
+            "access_code": data["access_code"],
+            "amount": payment.amount,
+            "currency": payment.currency
+        }
+
+        # Store idempotency key if provided
+        if idempotency_key:
+            idempotency_record = IdempotencyKey(
+                key=idempotency_key,
+                user_id=current_user.id,
+                response=response_data,
+                expires_at=datetime.now(timezone.utc) + timedelta(hours=IDEMPOTENCY_KEY_EXPIRY_HOURS)
+            )
+            db.add(idempotency_record)
+
         db.commit()
 
-        return PaymentInitializeResponse(
-            status="success",
-            reference=reference,
-            authorization_url=data["authorization_url"],
-            access_code=data["access_code"],
-            amount=payment.amount,
-            currency=payment.currency
-        )
+        return PaymentInitializeResponse(**response_data)
 
     except HTTPException:
         raise

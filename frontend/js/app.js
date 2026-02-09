@@ -5,6 +5,11 @@ const API_BASE_URL = 'http://localhost:8001/api/v1';
 let currentUser = null;
 let authToken = localStorage.getItem('authToken');
 
+// Generate unique idempotency key
+function generateIdempotencyKey() {
+    return 'idem_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
@@ -228,11 +233,17 @@ async function handlePayment(e) {
     const currency = document.getElementById('payment-currency').value || 'NGN';
     const alert = document.getElementById('payment-alert');
 
+    // Generate idempotency key to prevent duplicate payments
+    const idempotencyKey = generateIdempotencyKey();
+
     try {
         showAlert(alert, 'Initializing payment...', 'info');
 
         const data = await apiRequest('/payments/initialize', {
             method: 'POST',
+            headers: {
+                'X-Idempotency-Key': idempotencyKey
+            },
             body: JSON.stringify({ amount, currency })
         });
 

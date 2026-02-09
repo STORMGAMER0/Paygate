@@ -41,6 +41,24 @@ class User(Base):
     )
 
 
+class IdempotencyKey(Base):
+    """Store idempotency keys to prevent duplicate payments."""
+
+    __tablename__ = "idempotency_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(255), unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    response = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("idx_idempotency_key", "key", unique=True),
+        Index("idx_idempotency_user_id", "user_id"),
+    )
+
+
 class Transaction(Base):
     """Transaction model for payment records."""
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayGate - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">PayGate</div>
+        <div class="nav-links" id="auth-links" style="display: none;">
+            <a href="index.html">Login</a>
+        </div>
+        <div class="nav-links" id="user-links">
+            <span id="nav-user-email" style="color: #aaa;"></span>
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="admin.html" id="admin-link">Admin</a>
+            <a href="#" id="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="container" id="dashboard-content">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>Dashboard</h1>
+            <div class="user-info">
+                <span class="user-email" id="user-email-display"></span>
+                <span class="badge" id="user-role-badge"></span>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="card-grid">
+            <div class="card">
+                <h3>Total Payments</h3>
+                <div class="stat-value" id="total-payments">0</div>
+                <div class="stat-label">All time transactions</div>
+            </div>
+            <div class="card">
+                <h3>Successful Payments</h3>
+                <div class="stat-value" id="successful-payments">0</div>
+                <div class="stat-label">Completed transactions</div>
+            </div>
+            <div class="card">
+                <h3>Make a Payment</h3>
+                <div id="payment-alert" class="alert"></div>
+                <form class="payment-form" id="payment-form">
+                    <div class="form-row">
+                        <input type="number" id="payment-amount" placeholder="Amount (NGN)" min="1" required>
+                        <input type="text" id="payment-currency" value="NGN" readonly>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Initialize Payment</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Payment History Table -->
+        <div class="table-container">
+            <h3>Payment History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="payments-table-body">
+                    <tr>
+                        <td colspan="5" class="loading">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="payment-modal">
+        <div class="modal-content">
+            <h3>Payment Initialized</h3>
+            <div id="modal-payment-info"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button onclick="verifyPayment()" class="btn btn-primary" style="flex: 1;">Verify Payment</button>
+                <button onclick="closeModal()" class="btn btn-secondary" style="flex: 1;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
